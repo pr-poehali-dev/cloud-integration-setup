@@ -8,7 +8,8 @@ export default function MagneticsTable() {
 
   const filtered = useMemo(() => {
     return MAGNETICS.filter((r) => {
-      const matchSearch = r.name.toLowerCase().includes(search.toLowerCase())
+      const normalizedSearch = search.toLowerCase().replace(/\s+/g, ".")
+      const matchSearch = r.name.toLowerCase().includes(normalizedSearch)
       const matchEmpty = filterEmpty ? r.manufacture !== null || r.coating !== null : true
       return matchSearch && matchEmpty
     })
