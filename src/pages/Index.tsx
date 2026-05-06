@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import Typewriter from "typewriter-effect"
 import { FeatureCards } from "@/components/FeatureCards"
 import FlickeringGrid from "@/components/FlickeringGrid"
+import MagneticsTable from "@/components/MagneticsTable"
 
 export default function Index() {
   const [mounted, setMounted] = useState(false)
@@ -79,6 +80,17 @@ export default function Index() {
               <div className="mt-2 w-20 h-px mx-auto bg-gradient-to-r from-transparent via-gray-800 to-transparent" />
             </div>
             <FeatureCards />
+          </div>
+        </section>
+
+        <section className="min-h-screen py-20 px-4 md:px-6 snap-start bg-black">
+          <div className="max-w-6xl mx-auto">
+            <div className="mb-10 text-center">
+              <h2 className="text-2xl md:text-3xl text-white font-mono">Нормы времени</h2>
+              <p className="mt-2 text-gray-500 text-sm">Все значения — в нормо-часах</p>
+              <div className="mt-3 w-20 h-px mx-auto bg-gradient-to-r from-transparent via-gray-800 to-transparent" />
+            </div>
+            <MagneticsTable />
           </div>
         </section>
       </main>
