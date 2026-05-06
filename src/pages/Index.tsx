@@ -29,7 +29,7 @@ export default function Index() {
                   {mounted && (
                     <Typewriter
                       options={{
-                        strings: ["Neon Pulse AI"],
+                        strings: ["МагнитНорм"],
                         autoStart: true,
                         loop: false,
                         cursor: "",
@@ -41,7 +41,7 @@ export default function Index() {
                   )}
                 </h1>
                 <p className="mt-6 text-lg md:text-xl text-gray-400 max-w-3xl mx-auto font-light">
-                  Интеллектуальная автоматизация для бизнеса будущего.
+                  Мгновенный поиск норм времени для магнитопроводов. Все данные в одном месте — без таблиц, без лишнего времени.
                 </p>
               </div>
             </div>
@@ -75,7 +75,7 @@ export default function Index() {
         <section className="min-h-screen py-20 px-4 md:px-6 snap-start bg-black">
           <div className="max-w-7xl mx-auto">
             <div className="mb-12 text-center">
-              <h2 className="text-2xl md:text-3xl text-white font-mono">Наши решения</h2>
+              <h2 className="text-2xl md:text-3xl text-white font-mono">Возможности сервиса</h2>
               <div className="mt-2 w-20 h-px mx-auto bg-gradient-to-r from-transparent via-gray-800 to-transparent" />
             </div>
             <FeatureCards />

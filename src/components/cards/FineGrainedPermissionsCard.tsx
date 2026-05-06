@@ -21,7 +21,7 @@ export const FineGrainedPermissionsCard: React.FC = () => (
         </div>
       </div>
     }
-    title="Гибкие права доступа"
-    description="Детальная настройка и управление правами доступа без лишней сложности"
+    title="Экспорт в таблицу"
+    description="Выгружайте найденные нормы в Excel или CSV — удобно для расчётов и отчётности"
   />
 )
