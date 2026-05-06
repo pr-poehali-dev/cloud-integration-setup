@@ -1,0 +1,20 @@
+{
+  "tests": [
+    {
+      "name": "GET all magnetics",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "POST login wrong password",
+      "method": "POST",
+      "path": "/?login=1",
+      "body": {"password": "wrongpass"},
+      "expectedStatus": 401,
+      "expectedBody": {"ok": false},
+      "bodyMatcher": "partial"
+    }
+  ]
+}
