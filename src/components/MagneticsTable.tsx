@@ -3,12 +3,19 @@ import { MagneticRecord } from "@/data/magnetics"
 import Icon from "@/components/ui/icon"
 
 const API = "https://functions.poehali.dev/12996021-367b-41eb-ae20-cee744cae264"
+const FAVORITES_KEY = "magnetics_favorites"
 
 export default function MagneticsTable() {
   const [search, setSearch] = useState("")
   const [filterEmpty, setFilterEmpty] = useState(false)
   const [data, setData] = useState<MagneticRecord[]>([])
   const [loading, setLoading] = useState(true)
+  const [favorites, setFavorites] = useState<Set<number>>(() => {
+    try {
+      const saved = localStorage.getItem(FAVORITES_KEY)
+      return new Set(saved ? JSON.parse(saved) : [])
+    } catch { return new Set() }
+  })
 
   // Admin
   const [isAdmin, setIsAdmin] = useState(false)
@@ -36,15 +43,30 @@ export default function MagneticsTable() {
     if (showLoginModal) setTimeout(() => passwordRef.current?.focus(), 50)
   }, [showLoginModal])
 
+  useEffect(() => {
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites]))
+  }, [favorites])
+
+  const toggleFavorite = (id: number) => {
+    setFavorites((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) { next.delete(id) } else { next.add(id) }
+      return next
+    })
+  }
+
+  const favoriteRows = useMemo(() => data.filter((r) => favorites.has(r.id)), [data, favorites])
+
   const filtered = useMemo(() => {
     return data.filter((r) => {
+      if (favorites.has(r.id)) return false
       const nameLower = r.name.toLowerCase()
       const tokens = search.toLowerCase().trim().split(/[\s.]+/).filter(Boolean)
       const matchSearch = tokens.length === 0 || tokens.every((token) => nameLower.includes(token))
       const matchEmpty = filterEmpty ? r.manufacture !== null || r.coating !== null : true
       return matchSearch && matchEmpty
     })
-  }, [search, filterEmpty, data])
+  }, [search, filterEmpty, data, favorites])
 
   const fmt = (v: number | null) =>
     v === null ? <span className="text-gray-600">—</span> : v.toFixed(4).replace(".", ",")
@@ -101,6 +123,57 @@ export default function MagneticsTable() {
     />
   )
 
+  const colSpan = isAdmin ? 5 : 4
+
+  const renderRow = (row: MagneticRecord, i: number, isFav: boolean) => {
+    const isStar = favorites.has(row.id)
+    return (
+      <tr key={row.id} className={`border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors ${isFav ? "bg-yellow-950/10" : i % 2 === 0 ? "bg-transparent" : "bg-gray-900/20"}`}>
+        <td className="px-4 py-2.5 text-gray-600 font-mono text-xs">{row.id}</td>
+        <td className="px-4 py-2.5 font-mono text-xs tracking-wide">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => toggleFavorite(row.id)}
+              className={`flex-shrink-0 transition-colors ${isStar ? "text-yellow-400 hover:text-yellow-300" : "text-gray-700 hover:text-gray-500"}`}
+              title={isStar ? "Убрать из избранного" : "Добавить в избранное"}
+            >
+              <Icon name="Star" size={13} />
+            </button>
+            <span className={isFav ? "text-yellow-100" : "text-white"}>{row.name}</span>
+          </div>
+        </td>
+        {editingId === row.id ? (
+          <>
+            <td className="px-4 py-2 text-right">{numInput(editManufacture, setEditManufacture)}</td>
+            <td className="px-4 py-2 text-right">{numInput(editCoating, setEditCoating)}</td>
+            <td className="px-4 py-2 text-right">
+              <div className="flex items-center justify-end gap-1">
+                <button onClick={() => saveEdit(row.id)} disabled={saving} className="p-1 text-emerald-400 hover:text-emerald-300 disabled:opacity-50">
+                  <Icon name="Check" size={14} />
+                </button>
+                <button onClick={cancelEdit} className="p-1 text-gray-500 hover:text-gray-300">
+                  <Icon name="X" size={14} />
+                </button>
+              </div>
+            </td>
+          </>
+        ) : (
+          <>
+            <td className="px-4 py-2.5 text-right font-mono text-xs text-blue-300">{fmt(row.manufacture)}</td>
+            <td className="px-4 py-2.5 text-right font-mono text-xs text-emerald-300">{fmt(row.coating)}</td>
+            {isAdmin && (
+              <td className="px-4 py-2.5 text-right">
+                <button onClick={() => startEdit(row)} className="p-1 text-gray-600 hover:text-gray-300 transition-colors">
+                  <Icon name="Pencil" size={13} />
+                </button>
+              </td>
+            )}
+          </>
+        )}
+      </tr>
+    )
+  }
+
   return (
     <div className="w-full">
       {/* Search bar */}
@@ -130,7 +203,7 @@ export default function MagneticsTable() {
       </div>
 
       <div className="text-xs text-gray-600 mb-3">
-        {loading ? "Загрузка..." : `Найдено: ${filtered.length} из ${data.length}`}
+        {loading ? "Загрузка..." : `Найдено: ${filtered.length} из ${data.length}${favoriteRows.length > 0 ? ` · Избранное: ${favoriteRows.length}` : ""}`}
       </div>
 
       {/* Table */}
@@ -147,44 +220,36 @@ export default function MagneticsTable() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={5} className="text-center py-12 text-gray-600">Загрузка...</td></tr>
-            ) : filtered.length === 0 ? (
-              <tr><td colSpan={5} className="text-center py-12 text-gray-600">Ничего не найдено</td></tr>
+              <tr><td colSpan={colSpan} className="text-center py-12 text-gray-600">Загрузка...</td></tr>
             ) : (
-              filtered.map((row, i) => (
-                <tr key={row.id} className={`border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors ${i % 2 === 0 ? "bg-transparent" : "bg-gray-900/20"}`}>
-                  <td className="px-4 py-2.5 text-gray-600 font-mono text-xs">{row.id}</td>
-                  <td className="px-4 py-2.5 text-white font-mono text-xs tracking-wide">{row.name}</td>
-                  {editingId === row.id ? (
-                    <>
-                      <td className="px-4 py-2 text-right">{numInput(editManufacture, setEditManufacture)}</td>
-                      <td className="px-4 py-2 text-right">{numInput(editCoating, setEditCoating)}</td>
-                      <td className="px-4 py-2 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <button onClick={() => saveEdit(row.id)} disabled={saving} className="p-1 text-emerald-400 hover:text-emerald-300 disabled:opacity-50">
-                            <Icon name="Check" size={14} />
-                          </button>
-                          <button onClick={cancelEdit} className="p-1 text-gray-500 hover:text-gray-300">
-                            <Icon name="X" size={14} />
-                          </button>
-                        </div>
+              <>
+                {/* Favorites section */}
+                {favoriteRows.length > 0 && (
+                  <>
+                    <tr>
+                      <td colSpan={colSpan} className="px-4 py-2 bg-yellow-950/20 border-b border-yellow-900/30">
+                        <span className="flex items-center gap-1.5 text-yellow-500 text-xs font-mono">
+                          <Icon name="Star" size={11} />
+                          Избранное
+                        </span>
                       </td>
-                    </>
-                  ) : (
-                    <>
-                      <td className="px-4 py-2.5 text-right font-mono text-xs text-blue-300">{fmt(row.manufacture)}</td>
-                      <td className="px-4 py-2.5 text-right font-mono text-xs text-emerald-300">{fmt(row.coating)}</td>
-                      {isAdmin && (
-                        <td className="px-4 py-2.5 text-right">
-                          <button onClick={() => startEdit(row)} className="p-1 text-gray-600 hover:text-gray-300 transition-colors">
-                            <Icon name="Pencil" size={13} />
-                          </button>
-                        </td>
-                      )}
-                    </>
-                  )}
-                </tr>
-              ))
+                    </tr>
+                    {favoriteRows.map((row, i) => renderRow(row, i, true))}
+                    <tr>
+                      <td colSpan={colSpan} className="px-4 py-2 bg-gray-900/40 border-b border-gray-800">
+                        <span className="text-gray-600 text-xs font-mono">Все позиции</span>
+                      </td>
+                    </tr>
+                  </>
+                )}
+
+                {/* Main list */}
+                {filtered.length === 0 && favoriteRows.length === 0 ? (
+                  <tr><td colSpan={colSpan} className="text-center py-12 text-gray-600">Ничего не найдено</td></tr>
+                ) : (
+                  filtered.map((row, i) => renderRow(row, i, false))
+                )}
+              </>
             )}
           </tbody>
         </table>
